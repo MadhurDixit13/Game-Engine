@@ -9,7 +9,7 @@ int main()
 	//initializations
 	float dt;
 	float nexPos;
-	float gravity = 20.f;
+	float gravity = 20.f;   //cite https://www.youtube.com/watch?v=PGMdLgk4FD0
 	float jumpSpeed = 1250.f;
 	bool moveX = false;
     bool moveY = false;
@@ -37,7 +37,7 @@ int main()
 	window.setFramerateLimit(120);
 	
 	sf::Texture texture;
-	if (!texture.loadFromFile("brick1.png"))
+	if (!texture.loadFromFile("brick1.png"))  //bricks-texture- https://gamedeveloperstudio.itch.io/sma
     return -1;
 
 	character.setFillColor(sf::Color(255,0,0));
@@ -79,11 +79,12 @@ int main()
 			{
 				window.close();
 			}
-			else if (event.type == sf::Event::Resized && sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+			else if (event.type == sf::Event::Resized && sf::Keyboard::isKeyPressed(sf::Keyboard::E))  //cite https://www.sfml-dev.org/tutorials/2.2/graphics-view.php#showing-more-when-the-window-is-resized
     		{
         		sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
         		window.setView(sf::View(visibleArea));
     		}
+			//cite sfml-dev.org/documentation/2.5.1/classsf_1_1Event.php#details
 		}
 		// if (characterBorder.intersects(platformBorder))
 		// {
@@ -120,7 +121,7 @@ int main()
    			velocity.y = 0;  // Stop falling due to gravity
     		isJumping = false;
     		std::cout<<"collided";
-    		character.setPosition(character.getPosition().x, platformBorder.top - characterBorder.height);
+    		character.setPosition(character.getPosition().x, platformBorder.top - characterBorder.height); //cite https://www.sfml-dev.org/tutorials/2.5/graphics-transform.php
 		}
 		//collision moving platform
 		if(characterBorder.intersects(movingPlatformBorder))
@@ -147,6 +148,7 @@ int main()
 		}
 
 		//movement
+		//cite https://www.sfml-dev.org/tutorials/2.5/window-inputs.php
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 		{
     		// character.move(-1, 0);
@@ -204,7 +206,7 @@ int main()
 		}
 
 		
-		if(movingplatform.getPosition().x<=480)
+		if(movingplatform.getPosition().x<=480) //cite https://www.youtube.com/watch?v=NhXXC37Xoyo
 		{
 			platformVelocity.x = movementSpeed * dt;
 			platformVelocity.y = 0.f;
@@ -226,17 +228,15 @@ int main()
 	}
 	return 0;
 }
-//cite sfml-dev.org/documentation/2.5.1/classsf_1_1Event.php#details
-//cite https://www.sfml-dev.org/tutorials/2.5/window-inputs.php
-//cite sprite-animation- https://github.com/SFML/SFML/wiki/Easy-Animations-With-Spritesheets
-//cite https://github.com/SFML/SFML/wiki/Easy-Animations-With-Spritesheets
-//cite https://www.sfml-dev.org/tutorials/2.5/graphics-transform.php
-//cite https://en.sfml-dev.org/forums/index.php?topic=27820.0
-//cite https://www.youtube.com/watch?v=PGMdLgk4FD0
-//cite https://www.youtube.com/watch?v=NhXXC37Xoyo
-//cite https://www.sfml-dev.org/tutorials/2.2/graphics-view.php#showing-more-when-the-window-is-resized
 
-//assets
-//bricks-texture- https://gamedeveloperstudio.itch.io/sma
-//sprite assets https://zegley.itch.io/2d-platformermetroidvania-asset-pack/download/eyJleHBpcmVzIjoxNjkzMzY3NjU4LCJpZCI6MTg2MjY2MX0%3d.VaWUTqmFI%2f8YDMQLxJMepPX6BT4%3d
+
+
+
+
+//cite https://en.sfml-dev.org/forums/index.php?topic=27820.0
+
+
+
+
+
 
