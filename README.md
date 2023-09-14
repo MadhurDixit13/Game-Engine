@@ -1,5 +1,5 @@
 (All '#' are titles)
-# Game-Engine-Foundation_HW1
+Game-Engine-Foundation_HW1
 Homework for the course Game-Engine Foundations.
 
 #Name
