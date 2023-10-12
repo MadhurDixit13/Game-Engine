@@ -22,8 +22,7 @@ Enter the following commands: <br><br>
 To start the server:<br>
 1) g++ -c game_server.cpp - <br>
 2) g++ game_server.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
-3) ./(name of the output file) <br>
-<br>
+3) ./(name of the output file) <br><br>
 To start the client:<br>
 1) g++ -c game.cpp - <br>
 2) g++ game.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
