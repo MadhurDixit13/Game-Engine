@@ -20,13 +20,13 @@ First, download the zip and extract it, then go to the folder and open terminal 
 After installing the dependencies and required libraries <br>
 Enter the following commands: <br><br>
 To start the server:<br>
-1) g++ -c game_server.cpp - <br>
-2) g++ game_server.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
+1) g++ -c game_server.cpp -lzmq <br>
+2) g++ game_server.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window -pthread -lzmq <br>
 3) ./(name of the output file) <br><br>
 
 To start the client:<br>
-1) g++ -c game.cpp - <br>
-2) g++ game.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
+1) g++ -c game.cpp -lzmq <br>
+2) g++ game.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window -pthread -lzmq <br>
 3) ./(name of the output file) <br>
 
 ## System Specifications
@@ -39,7 +39,7 @@ Should work on windows, mac and other versions of linux (Haven't tested)
 1. x11-apps <br>
 2. build-essential <br>
 3. libsfml-dev <br>
-4. zmq <br>
+4. zmq (sudo apt-get install libzmq3-dev)<br>
 
 ## Authors and Acknowledgement
 Madhur Dixit
