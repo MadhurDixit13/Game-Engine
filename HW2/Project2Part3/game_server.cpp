@@ -1,10 +1,7 @@
 #include <zmq.hpp>
 #include <iostream>
 #include <vector>
-#include <iostream>
 #include <map>
-// #include <unordered_map>
-#include <iomanip>
 #include <string> 
 #include <SFML/System.hpp>
 
@@ -26,7 +23,6 @@ public:
     }
 protected:
 int clientID;
-// int iteration;
 };
 
 
@@ -44,9 +40,7 @@ int main() {
     zmq::socket_t pub_socket(context, ZMQ_PUB);
     pub_socket.bind("tcp://*:5555");
 
-    // std::unordered_map<std::string, int> clientIds;
-
-    std::cout<<"connection established"<<std::endl;
+    std::cout<<"Waiting for the clients.."<<std::endl;
 
 
     while (true) {
@@ -55,7 +49,6 @@ int main() {
         req_socket.recv(response, zmq::recv_flags::none);
 
         std::string responseStr(static_cast<char*>(response.data()), response.size());
-        // std::cout<<responseStr<<std::endl;
         int clientId;
 
         if (responseStr == "Joined") {
@@ -76,7 +69,6 @@ int main() {
                 serializedData = serializedData + "Client Id:" +std::to_string(i) + "," + " Iteration:" +std::to_string(iteration.iter[i]) + "\n"; 
                 iteration.iter[i]=iteration.iter[i]+1;
             }
-            // std::string serializedData = "Updating the coordinates";
             std::string reply = "clientId received";
             req_socket.send(zmq::const_buffer(reply.c_str(), reply.size()), zmq::send_flags::none);
             pub_socket.send(zmq::const_buffer(serializedData.c_str(), serializedData.size()), zmq::send_flags::none);

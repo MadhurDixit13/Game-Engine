@@ -12,10 +12,10 @@
 #include <iostream>
 #include <map>
 #include <cmath>
-#include <iomanip>
 // standard c++ header
 
 #include <zmq.hpp>
+// ZeroMQ header
 
 using namespace sf;
 
@@ -25,8 +25,7 @@ sf::Mutex mutex;
 //cite - https://www.sfml-dev.org/tutorials/2.5/system-thread.php
 //cite - https://www.geeksforgeeks.org/multithreading-in-cpp/
 
-//custom shape class inheriting from sfml's default shape class
-
+//custom pentagon shape class inheriting from sfml's default shape class
 class PentagonShape : public sf::Shape {
 public:
     PentagonShape(float size = 50.f) : m_size(size) {
@@ -43,7 +42,7 @@ public:
     }
 
     virtual size_t getPointCount() const {
-        return 5; // Pentagon has 5 points
+        return 5; 
     }
 
     virtual sf::Vector2f getPoint(size_t index) const {
@@ -61,6 +60,7 @@ private:
     float m_size;
 };
 
+//Character Class inheriting the Pentagon Class
 class Character : public PentagonShape{
 public: 
 	Character() : jumpSpeed(1000.f), moveX(false), moveY(false), isJumping(false), movementSpeed(150.f), character(50){	
@@ -151,7 +151,7 @@ protected:
 	PentagonShape character;
 };
 
-//Timeline Class
+//Timeline Class 
 class Timeline {
 public:
     Timeline() : gameSpeed(1.f), paused(false), pauseTime(0.f) {}
@@ -243,6 +243,7 @@ struct GameState{
     float movingPlatformPositionY;
 };
 
+//First thread
 //loading and applying textures to platforms through multithreading
 void thread1(sf::Texture& texture, sf::RectangleShape& platform, sf::RectangleShape& movingplatform) {
     mutex.lock();
@@ -255,10 +256,11 @@ void thread1(sf::Texture& texture, sf::RectangleShape& platform, sf::RectangleSh
     mutex.unlock();
 }
 
-//Using seperate thread to handle the movement of the moving platform
+//Thread 2
+//To handle the movement of the moving platform
 void thread2(sf::RectangleShape& movingplatform, Vector2f& platformVelocity, float movementSpeed, float dt, const unsigned WINDOW_WIDTH, bool paused) {
     mutex.lock();
-
+	// Mutex to manage shared resources between the threads
     if (movingplatform.getPosition().x <= 480) {
         if (!paused) {
             platformVelocity.x = movementSpeed;
@@ -282,9 +284,7 @@ void thread2(sf::RectangleShape& movingplatform, Vector2f& platformVelocity, flo
 
 int main()
 {
-
-
-	//network code
+	//Initializations
 	int clientID = 0;
 	CharacterState characterState;
 	GameState gameState;
@@ -303,14 +303,8 @@ int main()
 	zmq::message_t response;
 	req_socket.recv(response, zmq::recv_flags::none);
 	std::string responseStr(static_cast<char*>(response.data()), response.size());
-	// std::cout<<responseStr<<std::endl;
 	clientID = std::stoi(responseStr);
 	
-	
-	// Network network;
-	// CharacterState characterState;
-	// network.server_sendMessage(characterState);
-	//initializations
 	float gravity = 20.f;
 	const unsigned WINDOW_WIDTH = 1800;
 	const unsigned WINDOW_HEIGHT = 1600;
@@ -334,8 +328,6 @@ int main()
 	Character character;
 	character.initialize();
 	float gameTime= timeline.getGameTime(realTimeClock); //game time
-	//set frame rate limit
-	// window.setFramerateLimit(120);
 
 	window.setVerticalSyncEnabled(true);
 
@@ -349,6 +341,7 @@ int main()
 	movingplatform.setOutlineColor(sf::Color(0,255,0));	
 	movingplatform.setPosition(480, 400);
 
+	// Making thread 1
 	std::thread t1(&thread1, std::ref(texture), std::ref(platform), std::ref(movingplatform));
     t1.join();
 
@@ -360,6 +353,8 @@ int main()
 		// Clock loop_clock;
 		// sf::Time loopIterationTime = loop_clock.getElapsedTime();
 		// float loopIterationTimeElapsed = loopIterationTime.asSeconds();
+
+		//Events and inputs
 		sf::Event event;
 		if (window.hasFocus()) {
 		while(window.pollEvent(event))
@@ -469,6 +464,7 @@ int main()
     		character.set_isJumping(true); // Set jumping flag to true	
 		}
 		}
+		// Making thread 2
     	std::thread t2(&thread2, std::ref(movingplatform), std::ref(platformVelocity), character.get_movementSpeed(), timeline.getDeltaTime(), std::ref(WINDOW_WIDTH), timeline.isPaused());
         t2.detach(); 
 
@@ -531,10 +527,6 @@ int main()
 			std::cout<< id << ":" << x << ":" << y << std::endl;
             // Update the characterPositions map
             characterPositions[id] = sf::Vector2f(x, y);
-			// PentagonShape character(50);
-			// character.setPosition(sf::Vector2f(x, y));
-			// character.setFillColor(sf::Color(255,0,0));
-			// characters.push_back(character);
         } catch (const std::exception& e) {
 			
         }
@@ -549,18 +541,10 @@ int main()
 				c[count].setFillColor(sf::Color(255,0,0));
 				window.draw(c[count]);
 				count++;
-				// characters.push_back(c);
 
         }
-		// for (const PentagonShape& c : characters) {
-		// 	// std::cout << "Character position: " << c.getPosition().x<<std::endl;j
-    	// 	// window.draw(c);
-		// }
 		movingplatform.move(platformVelocity.x*timeline.getDeltaTime(), 0.f);
-		// character.character_draw(window);
-		window.display();
-		// gameState.characterPositions.clear();
-		
+		window.display();	
 	}
 	return 0;
 }

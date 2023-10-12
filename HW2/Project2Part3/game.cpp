@@ -1,30 +1,12 @@
-#include <SFML/Graphics.hpp>
-#include <SFML/Window.hpp>
-#include <SFML/System.hpp>
-//standard sfml headers
-
-#include <SFML/System/Mutex.hpp>
-//using for shared resource management
-
-#include <thread>
-// c++ thread class header
-
 #include <iostream>
 // #include <bits/stdc++.h>
-#include <iomanip>
-// standard c++ header
-
 #include <zmq.hpp>
 
 using namespace std;
 
 int main()
 {
-
-
-	//network code
 	int clientID = 0;
-	// CharacterState characterState;
 	zmq::context_t context(1);
     zmq::socket_t req_socket(context, ZMQ_REQ);
     req_socket.connect("tcp://localhost:5556");
@@ -38,7 +20,6 @@ int main()
 	zmq::message_t response;
 	req_socket.recv(response, zmq::recv_flags::none);
 	std::string responseStr(static_cast<char*>(response.data()), response.size());
-	// std::cout<<responseStr<<std::endl;
 	clientID = std::stoi(responseStr);
 
 	

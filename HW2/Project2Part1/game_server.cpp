@@ -1,10 +1,7 @@
 #include <zmq.hpp>
 #include <iostream>
 #include <vector>
-#include <iostream>
 #include <map>
-// #include <unordered_map>
-#include <iomanip>
 #include <string> 
 #include <SFML/System.hpp>
 
@@ -49,12 +46,9 @@ int main() {
 
     // Socket for broadcasting game state to clients
     zmq::socket_t pub_socket(context, ZMQ_PUB);
-    // zmq::setsocketopt(pub_socket, ZMQ_CONFLATE, 1, sizeof(int));
     pub_socket.bind("tcp://*:5555");
 
-    // std::unordered_map<std::string, int> clientIds;
-
-    std::cout<<"connection established"<<std::endl;
+    std::cout<<"Waiting for clients.."<<std::endl;
 
 
     while (true) {
@@ -65,12 +59,12 @@ int main() {
         std::string responseStr(static_cast<char*>(response.data()), response.size());
         std::cout<<responseStr<<std::endl;
         int clientId;
-
+        // When client sends join request
         if (responseStr == "Joined") {
             server.update_clientID();
             clientId = server.get_clientId();
             
-            std::string reply = std::to_string(clientId);
+            std::string reply = std::to_string(clientId); // sends unique id to that client which client then stores and sends it everytime to the server
             std::cout<<reply<<std::endl;
 
             req_socket.send(zmq::const_buffer(reply.c_str(), reply.size()), zmq::send_flags::none);
@@ -83,9 +77,9 @@ int main() {
             std::string serializedData="";
             for (auto i : gameState.characterPositions) 
             {
-                serializedData = serializedData + std::to_string(i.first) + "," + std::to_string(i.second.x) + "," + std::to_string(i.second.y) + ","; 
+                serializedData = serializedData + std::to_string(i.first) + "," + std::to_string(i.second.x) + "," + std::to_string(i.second.y) + ","; // converting struct fields ti string
             }
-            // std::string serializedData = "Updating the coordinates";
+            
             std::string reply = "Coordinates received";
             req_socket.send(zmq::const_buffer(reply.c_str(), reply.size()), zmq::send_flags::none);
             pub_socket.send(zmq::const_buffer(serializedData.c_str(), serializedData.size()), zmq::send_flags::none);
