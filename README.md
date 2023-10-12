@@ -18,15 +18,15 @@ P - Pause Unpause <br>
 ## How to run
 First, download the zip and extract it, then go to the folder and open terminal <br>
 After installing the dependencies and required libraries <br>
-Enter the following commands: <br>
-To start the server:
-g++ -c game_server.cpp - <br>
-g++ game_server.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
-./(name of the output file) <br>
-To start the client:
-g++ -c game.cpp - <br>
-g++ game.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
-./(name of the output file) <br>
+Enter the following commands: <br><br>
+To start the server:<br>
+1) g++ -c game_server.cpp - <br>
+2) g++ game_server.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
+3) ./(name of the output file) <br>
+To start the client:<br>
+1) g++ -c game.cpp - <br>
+2) g++ game.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
+3) ./(name of the output file) <br>
 
 ## System Specifications
 Operating System:
