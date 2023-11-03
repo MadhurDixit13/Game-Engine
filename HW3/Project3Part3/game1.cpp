@@ -30,54 +30,49 @@ public:
     PentagonShape(float size = 50.f) : m_size(size) {
         update();
     }
+
     void setSize(float size) {
         m_size = size;
         update();
     }
+
     float getSize() const {
         return m_size;
     }
+
     virtual size_t getPointCount() const {
-        return 5; 
+        return 5; // Pentagon has 5 points
     }
+
     virtual sf::Vector2f getPoint(size_t index) const {
         static const float pi = 3.141592654f;
         float angle = index * 2 * pi / 5; // Angle between points
+
+        // Calculate the position of the points on the pentagon
         float x = m_size * std::cos(angle);
         float y = m_size * std::sin(angle);
+
         return sf::Vector2f(m_size + x, m_size + y); // Offset by m_size for positioning
     }
 
 private:
     float m_size;
 };
-class GameObject {
-public:
-    GameObject(sf::Shape *object) : shape(object) {}
+// class Movement{
 
-    sf::Vector2f get_position() {
-        return shape->getPosition();
-	}
-	sf::FloatRect getBoundsRectangleShape(RectangleShape *object){
-		return object->getGlobalBounds();
-	}
-	sf::FloatRect getBoundsPentagonShape(PentagonShape *object){
-		return object->getGlobalBounds();
-	}
-	void set_position_pentagon(PentagonShape *object, Vector2f pos){
-		object->setPosition(pos);
-	}
-	void set_position_rectangle(RectangleShape *object, Vector2f pos){
-		object->setPosition(pos);
-	}
-protected:
-    sf::Shape *shape;
-};
+// };
+// class GameObject{
+// 	public:
+// 		GameObject(){}
+// 		void set_position(sf)
+// 	protected:
 
+// }
 class Spawner {
 public:
     Spawner(float x, float y) : position(x, y) {}
     Vector2f getPosition() const { return position; }
+	   // Implement a function to respawn the character at a specific spawn point
     void respawnCharacter(Shape& character, const sf::Vector2f& Spawner) {
         // Reset the character's position to the spawn point
         character.setPosition(Spawner.x, Spawner.y);
@@ -86,10 +81,12 @@ protected:
     Vector2f position;
 };
 
+
 class DeathZone {
 public:
     DeathZone(const sf::Shape& shape) : bounds(shape) {
     }
+    // Implement a function to check for character collisions
     bool isCharacterColliding(const sf::FloatRect& characterBounds) const {
         return bounds.getGlobalBounds().intersects(characterBounds);
     }
@@ -97,50 +94,96 @@ protected:
     const sf::Shape& bounds;
 };
 
-class Lava : public DeathZone, public Spawner, public GameObject {
+class Lava : public DeathZone, public Spawner {
 public:
     Lava(float windowWidth, float windowHeight, float lavaHeight) 
-        : DeathZone(lavaShape), Spawner(0, windowHeight - lavaHeight), spawnY(windowHeight - lavaHeight), GameObject(&lavaShape) {
+        : DeathZone(lavaShape), Spawner(0, windowHeight - lavaHeight), spawnY(windowHeight - lavaHeight) {
         lavaShape.setSize(Vector2f(windowWidth, lavaHeight));
         lavaShape.setPosition(0, windowHeight - lavaHeight);
         lavaShape.setFillColor(Color::Red); // Adjust the color as needed
+		// std::cout<<"Bye"<<std::endl;
+		std::cout<<windowHeight<<std::endl;
     }
-    sf::RectangleShape* getLava(){
-		return &lavaShape;
+	sf::Vector2f get_position(){
+		return lavaShape.getPosition();
 	}
 	void set_position(Vector2f pos){
-		lavaShape.setPosition(pos);
+			lavaShape.setPosition(pos);
+	}
+    sf::RectangleShape getLava(){
+		// std::cout<<"bye";
+		return lavaShape;
 	}
 	void lava_respawn(){
 		this->respawnCharacter(lavaShape, Vector2f(0, spawnY));
 	}
+
 private:
     RectangleShape lavaShape;
 	float spawnY;
 };
 
+
+
 class SideBoundary {
 public:
     SideBoundary(FloatRect bounds) : boundary(bounds) {}
-    FloatRect getBounds() const { return boundary; }
+
+    bool characterHitsBoundary(const sf::Vector2f& characterPosition) {
+        return characterPosition.x < boundary.left || characterPosition.x >= boundary.left + boundary.width;
+    }
+
+    void adjustViewForBoundary(sf::View& view, const sf::Vector2f& characterPosition, float windowWidth, Lava& lava) {
+        sf::Vector2f currentCenter = view.getCenter();
+
+        if (characterPosition.x < boundary.left) {
+            // Character hit the left side boundary
+            // Move all objects in the scene to the right to create the side-scrolling effect
+            while (currentCenter.x == windowWidth / 2) {
+                view.setCenter(currentCenter.x - (windowWidth / 2) - characterPosition.x, currentCenter.y);
+				lava.set_position(Vector2f(lava.get_position().x - 1000.f-characterPosition.x, lava.get_position().y ));
+                // Adjust other objects' positions here
+            }
+        } else if (characterPosition.x >= boundary.left + boundary.width) {
+            // Character hit the right side boundary
+            // Move all objects in the scene to the left to create the side-scrolling effect
+            view.setCenter(characterPosition.x, currentCenter.y);
+			lava.set_position(Vector2f(characterPosition.x - (windowWidth/2), lava.get_position().y ));
+            // Adjust other objects' positions here
+        }
+    }
+
 private:
     FloatRect boundary;
 };
 
-class Platform:public GameObject{
+
+class Platform{
 public:
-	Platform(sf::Color color, sf::Color outlineColor, Vector2f pos, Vector2f size) : platform(size), GameObject(&platform){
+	Platform(sf::Color color, sf::Color outlineColor, Vector2f pos, Vector2f size) : platform(size){
 		platform.setFillColor(color);
 		platform.setOutlineThickness(5);
 		platform.setOutlineColor(outlineColor);
+		platform.setPosition(pos);	
+
+	}
+	sf::FloatRect getBounds(){
+		return platform.getGlobalBounds();
+	}
+	Vector2f get_position(){
+        return platform.getPosition();
+    }
+	void set_position(Vector2f pos){
 		platform.setPosition(pos);
 	}
-	sf::RectangleShape* getPlatform(){
-		return &platform;
+
+	sf::RectangleShape getPlatform(){
+		return platform;
 	}
 	void platform_set_texture(sf::Texture& texture){
 		platform.setTexture(&texture);
 	}
+
 protected:
 	sf::RectangleShape platform;	
 	sf::FloatRect platformBorder = platform.getGlobalBounds();	
@@ -150,6 +193,7 @@ protected:
 class Timeline {
 public:
     Timeline() : gameSpeed(1.f), paused(false), pauseTime(0.f) {}
+
     void togglePause(sf::Clock& dt_clock) {
         if (paused){
             // Pause the game
@@ -168,6 +212,7 @@ public:
             
         }
     }
+
     void updateDeltaTime(sf::Clock& dt_clock) {
         if (!paused) {
             dt = dt_clock.restart().asSeconds() * gameSpeed;
@@ -175,36 +220,46 @@ public:
             dt = 0.f;
         }
     }
+
     float getDeltaTime(){
 		//loop iteration time, frame-rate
         return dt;
     }
+	
 	void setDeltaTime(float dt_value){
 		dt = dt_value;
 	}
+
     void setGameSpeed(float speed) {
         gameSpeed = speed;
     }
+
     float getGameSpeed() {
         return gameSpeed;
     }
+
     bool isPaused() {
         return paused;
     }
+
 	float getRealTime(sf::Clock& realTimeClock){
 		//real or global time
 		return realTimeClock.getElapsedTime().asSeconds();
 	}
+
     float getGameTime(sf::Clock& realTimeClock) {
 		//game time
         return realTimeClock.getElapsedTime().asSeconds() - pauseTime;
     }
+
 	float getDeltaJumpTime(){
 		return dt_jump;
 	}
+
 	void setDeltaJumpTime(float dt_jump_updated){
 		dt_jump = dt_jump_updated;
 	}
+
 protected:
     float dt;
 	float dt_jump;
@@ -214,24 +269,32 @@ protected:
     sf::Clock pauseClock;
 };
 
-class MovingPlatform : public Timeline, public GameObject{
+class MovingPlatform : public Timeline{
 public:
-	MovingPlatform(sf::Color color, sf::Color outlineColor, Vector2f size, Vector2f pos, Vector2f bound, Vector2f speed) :movingplatform(size), GameObject(&movingplatform),movementSpeed(speed), movingPlatformPosition(pos), boundary(bound){
+	MovingPlatform(sf::Color color, sf::Color outlineColor, Vector2f size, Vector2f pos, Vector2f bound, Vector2f speed) :movingplatform(size), movementSpeed(speed), movingPlatformPosition(pos), boundary(bound){
 		movingplatform.setFillColor(color);
 		movingplatform.setOutlineThickness(5);
 		movingplatform.setOutlineColor(outlineColor);
         movingplatform.setPosition(pos);
 	}
-	sf::RectangleShape* getMovingPlatform(){
-		return &movingplatform;
+
+	sf::RectangleShape getMovingPlatform(){
+		return movingplatform;
+	}
+	sf::FloatRect getBounds(){
+		return movingplatform.getGlobalBounds();
 	}
 	Vector2f getPlatformVelocity(){
 		return platformVelocity;
 	}
+	void set_position(float x, float y){
+		movingplatform.setPosition(x, y);
+	}
 	void platformMove(unsigned WINDOW_WIDTH){
 		mutex.lock();
 		 if (movingplatform.getPosition().x <= boundary.x) {
-                platformVelocity.x = movementSpeed.x; 
+                platformVelocity.x = movementSpeed.x;
+                
             } 
             else if (movingplatform.getPosition().x + movingPlatformBorder.width >= boundary.x + 1200.f) {
                 platformVelocity.x = -movementSpeed.x;
@@ -258,63 +321,92 @@ protected:
 	sf::FloatRect movingPlatformBorder = movingplatform.getGlobalBounds();
 };
 
-class Character : public PentagonShape, public Spawner, public GameObject{
+class Character : public PentagonShape, public Spawner{
 public: 
-	Character() : jumpSpeed(1000.f), moveX(false), moveY(false), isJumping(false), movementSpeed(150.f), character(50), Spawner(50.f, 545.f), GameObject(&character){	
+	Character() : jumpSpeed(1000.f), moveX(false), moveY(false), isJumping(false), movementSpeed(150.f), character(50), Spawner(50.f, 545.f){	
 	}
+
 	void initialize(){
 		character.setFillColor(sf::Color(255,0,0));
 		character.setPosition(50.f, 545.f);//50, 545
 	}
+
 	void set_characterPlatformVelocity(float x, float y){
 	characterPlatformVelocity.x = x;
 	characterPlatformVelocity.y = y;
 	}
-	PentagonShape* getCharacter(){
-		return &character;
+	PentagonShape getCharacter(){
+		return character;
 	}
+
 	Vector2f get_characterPlatformVelocity(){
 		return characterPlatformVelocity;
 	}
+
+	Vector2f get_characterPosition(){
+		return character.getPosition();
+	}
+
+	void set_characterPosition(float x, float y){
+		character.setPosition(x, y);
+	}
+
+	FloatRect get_characterBorder(){
+		return character.getGlobalBounds();
+	}
+
 	Vector2f get_characterVelocity(){
 		return velocity;
 	}
+
 	void set_characterVelocityX(float x){
 		velocity.x = x;
 	}
+
 	void set_characterVelocityY(float y){
 		velocity.y = y;
 	}
+
 	float get_movementSpeed(){
 		return movementSpeed;
 	}
+
 	float get_jumpSpeed(){
 		return jumpSpeed;
 	}
+
 	bool get_isJumping(){
 		return isJumping;
 	}
+
 	void set_isJumping(bool value){
 		isJumping = value;
 	}
+
 	void set_moveX(bool value){
 		moveX = value;
 	}
+
 	void set_moveY(bool value){
 		moveY = value;
 	}
+
 	bool get_moveX(){
 		return moveX;
 	}
+
 	bool get_moveY(){
 		return moveY;
 	}
+
 	void character_draw(sf::RenderWindow& window){
 		window.draw(character);
 	}
+
 	void character_respawn(){
 		this->respawnCharacter(character, Vector2f(50.f, 545.f));
 	}
+
 protected:
 	float jumpSpeed;
 	bool moveX;
@@ -325,6 +417,8 @@ protected:
 	Vector2f characterPlatformVelocity; 
 	PentagonShape character;
 };
+
+
 
 class NetworkManager {
 public:
@@ -338,27 +432,57 @@ public:
         sub_socket.connect("tcp://localhost:5555");
         sub_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
     }
+
 	void sendMessage(std::string reply){
 		req_socket.send(zmq::const_buffer(reply.c_str(), reply.size()), zmq::send_flags::none);
 	}
+
 	void receiveMessage(){
 		zmq::message_t response;
 		req_socket.recv(response, zmq::recv_flags::none);
 		std::string responseStr(static_cast<char*>(response.data()), response.size());
 		clientID = std::stoi(responseStr);
 	}
-    void sendGameData(float characterX, float characterY, float timestamp) {
+
+    void sendGameData(float characterX, float characterY) {
+		performance = performanceTime.restart().asSeconds();
         std::string serializedData = std::to_string(clientID) + ","
                          + std::to_string(characterX) + ","
-                         + std::to_string(characterY) + ","
-						 + std::to_string(timestamp);
+                         + std::to_string(characterY);
 		req_socket.send(zmq::const_buffer(serializedData.c_str(), serializedData.size()), zmq::send_flags::none);
 		zmq::message_t response;
         req_socket.recv(response, zmq::recv_flags::none);
+        // std::string responseStr(static_cast<char*>(response.data()), response.size());
     }
+	bool disconnect() {
+		try{
+        std::string disconnectMessage = std::to_string(clientID) + "," + "Disconnect";
+        req_socket.send(zmq::const_buffer(disconnectMessage.c_str(), disconnectMessage.size()), zmq::send_flags::none);
+        zmq::message_t response;
+           while (true) {
+        if (req_socket.recv(response, zmq::recv_flags::none)) {
+            // Response received
+            break;
+        }
+        // You can add a sleep or yield here to avoid busy waiting
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		
+    }
+        // Additional cleanup or handling here
+        req_socket.close();
+        sub_socket.close();
+		}
+		catch (const zmq::error_t& e) {
+    // Handle the ZeroMQ exception
+    std::cerr << "ZeroMQ Error: " << e.what() << std::endl;
+		}
+		return true;
+    }
+
     std::map<int, sf::Vector2f> receiveGameData(std::vector<Platform>& platforms,std::vector<MovingPlatform>& movingPlatforms) {
         zmq::message_t message;
         sub_socket.recv(message, zmq::recv_flags::none);
+		std::cout<<performance;
         std::string receivedData(static_cast<char*>(message.data()), message.size()); 
 		std::vector<std::string> components;
 		std::istringstream dataStream(receivedData);
@@ -366,39 +490,50 @@ public:
 		while (std::getline(dataStream, component, ',')) {
     		components.push_back(component);
 		}
+		// Ensure that there are at least three components (id, x, y) in each entry
 		const int componentsPerEntry = 3;
+		// float mpVelocity;
 		std::vector <PentagonShape> characters;
 		std::map <int, Vector2f> characterPositions;
+		// if (components.size() % componentsPerEntry == 0) {
 		for(int i=0; i<2;i++)
 		{
-			sf::RectangleShape* movingPlatformShape = movingPlatforms[i].getMovingPlatform();
-			movingPlatforms[i].set_position_rectangle(movingPlatformShape,Vector2f(std::stof(components[(i*2)]), std::stof(components[(i*2)+1])));
+			movingPlatforms[i].set_position(std::stof(components[(i*2)]), std::stof(components[(i*2)+1]));
 		}
 		for(int i=2; i<4;i++)
 		{
-			sf::RectangleShape* platformShape = platforms[i].getPlatform();
- 			platforms[i].set_position_rectangle(platformShape,Vector2f(std::stof(components[(i*2)]), std::stof(components[(i*2)+1])));
+			platforms[i].set_position(Vector2f(std::stof(components[(i*2)]), std::stof(components[(i*2)+1])));
 		}
+		// movingPlatforms[0].set_position(std::stof(components[0]), std::stof(components[1]));
+		// movingPlatforms[1].set_position(std::stof(components[2])+1000.f, std::stof(components[3]));
+		// mpVelocity =  std::stof(components[0]);
     	for (size_t i = 8; i < components.size(); i += componentsPerEntry) {
         try {
             int id = std::stoi(components[i]);
             float x = std::stof(components[i + 1]);
             float y = std::stof(components[i + 2]);
+			// std::cout<< id << ":" << x << ":" << y << std::endl;
             // Update the characterPositions map
             characterPositions[id] = sf::Vector2f(x, y);
         } catch (const std::exception& e) {
+			
         }
+    	// }
 		} 
         return characterPositions;
     }
+
 private:
     int clientID;
     zmq::context_t context;
     zmq::socket_t req_socket;
-    zmq::socket_t sub_socket;	
+    zmq::socket_t sub_socket;
+	Clock performanceTime;
+	float performance;
 };
 
 struct CharacterState {
+    // int clientId;
     float characterX;
     float characterY; 
 };
@@ -428,14 +563,18 @@ void thread1(sf::Texture& texture, std::vector<Platform>& platforms, std::vector
 
 class Game{
 public:
-    Game() : window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Platforms"), gravity(20.f), clientID(0), WINDOW_WIDTH(1600), WINDOW_HEIGHT(1600), networkManager(clientID), lava(1800.f, 1600.f, 20.0f), characterSpawner(50.f, 545.f){
+    Game() : window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Platforms"), gravity(20.f), clientID(0), WINDOW_WIDTH(1600), WINDOW_HEIGHT(1600), networkManager(clientID), lava(1800.f, 1600.f, 20.0f), characterSpawner(50.f, 545.f) {
         window.setVerticalSyncEnabled(true);
-	}	
+    }
+	
 	void run() {
-		PentagonShape *characterShape = character.getCharacter();
-		RectangleShape *lavaShape = lava.getLava();
+		// std::chrono::high_resolution_clock::time_point start_time, end_time;
+		FloatRect boundaryRect(0.f, 0.f, WINDOW_WIDTH/2, WINDOW_HEIGHT);  // Adjust the values accordingly
+		SideBoundary boundary(boundaryRect);
+    
+    // Start the clock
+    // start_time = std::chrono::high_resolution_clock::now();
 		std::string reply = "Joined";
-		realTimeClock.restart().asSeconds();
 	    networkManager.sendMessage(reply);
 	    networkManager.receiveMessage();
 		std::vector<Platform> platforms;
@@ -444,19 +583,18 @@ public:
 		std::vector<MovingPlatform> movingPlatforms;
 		movingPlatforms.push_back(MovingPlatform(sf::Color(165,42,42), sf::Color(255,0,0),sf::Vector2f(500.f, 100.f), Vector2f(480.f, 500.f), Vector2f(480.f, 500.f), Vector2f(150.f, 0.f)));
 		movingPlatforms.push_back(MovingPlatform(sf::Color(165,42,42), sf::Color(200,255,0),sf::Vector2f(500.f, 100.f), Vector2f(2150.f, 200.f), Vector2f(2150.f, 200.f), Vector2f(0.f, 150.f)));
+		Character character;
 		character.initialize();
 		Vector2f platformVelocity;
 		Vector2f prevMovingPlatformPosition;
 		sf::Texture texture;
 		sf::FloatRect platformBorder[platforms.size()];
 		for(int i=0; i<platforms.size(); i++){
-			sf::RectangleShape* platformShape = platforms[i].getPlatform();
-			platformBorder[i] = platforms[i].getBoundsRectangleShape(platformShape);
+			platformBorder[i] = platforms[i].getBounds();
 		}
 		sf::FloatRect movingPlatformBorder[movingPlatforms.size()];
 		for(int i=0; i<movingPlatforms.size(); i++){
-			sf::RectangleShape* movingPlatformShape = movingPlatforms[i].getMovingPlatform();
-			movingPlatformBorder[i] = movingPlatforms[i].getBoundsRectangleShape(movingPlatformShape);
+			movingPlatformBorder[i] = movingPlatforms[i].getBounds();
 		}
 		float gameTime= timeline.getGameTime(realTimeClock); //game time
 		sf::View gameView;
@@ -478,7 +616,10 @@ public:
 		{
 			if(event.type == sf::Event::Closed)
 			{
+				bool disconnected = networkManager.disconnect();
+				if(disconnected){
 					window.close();
+				}
 			}
 			else if (event.type == sf::Event::Resized && sf::Keyboard::isKeyPressed(sf::Keyboard::E))
     		{
@@ -495,7 +636,9 @@ public:
     		{
         		pKeyPressed = false; // Reset the flag when 'P' key is released
     		}
+    		
 		}
+	
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
 		{
     			qKeyPressed = true;
@@ -519,38 +662,54 @@ public:
         // Only update dt if the game is not paused
 		timeline.updateDeltaTime(dt_clock);
         timeline.setDeltaJumpTime(timeline.getDeltaTime()/timeline.getGameSpeed());
+       
     	}	
+
 		std::cout << std::fixed; 
 		gravity = 20.f;
+		
+
 		character.set_characterPlatformVelocity(0.f, 0.f);
-		character.getBoundsPentagonShape(characterShape);
+
+		character.get_characterBorder();
+    	// platformBorder = platform.getBounds();
+    	// movingPlatformBorder = movingPlatform.getBounds();
+
 		character.set_characterVelocityY(character.get_characterVelocity().y+gravity*timeline.getDeltaJumpTime());
 		character.set_moveX(false);
 		character.set_moveY(true);
+		
 		for(int i = 0; i < platforms.size(); i++)
 		{
-			sf::RectangleShape* platformShape = platforms[i].getPlatform();
-			if (character.getBoundsPentagonShape(characterShape).intersects(platforms[i].getBoundsRectangleShape(platformShape))) {
+			if (character.get_characterBorder().intersects(platforms[i].getBounds())) {
     		// Collision detected with the platform
     		character.set_characterVelocityY(0.f); // Stop falling due to gravity
     		character.set_isJumping(false);
     		// Adjust the character's position to be just above the platform
-    		character.set_position_pentagon(characterShape,Vector2f(character.get_position().x, platforms[i].getBoundsRectangleShape(platformShape).top - character.getBoundsPentagonShape(characterShape).height - 1.f));
+    		character.set_characterPosition(character.get_characterPosition().x, platforms[i].getBounds().top - character.get_characterBorder().height - 1.f);
 		}
 		}
+		// Collision detection with the platform
+	
+
 		// Collision detection with the moving platform
 		for(int i = 0; i < movingPlatforms.size(); i++)
 		{
-			sf::RectangleShape* movingPlatformShape = movingPlatforms[i].getMovingPlatform();
-			if (character.getBoundsPentagonShape(characterShape).intersects(movingPlatforms[i].getBoundsRectangleShape(movingPlatformShape))) {
+			if (character.get_characterBorder().intersects(movingPlatforms[i].getBounds())) {
     		// Collision detected with the moving platform
     		character.set_characterVelocityY(0.f); // Stop falling due to gravity
     		character.set_isJumping(false);
     		character.set_moveX(true);
-    		character.set_position_pentagon(characterShape,Vector2f(character.get_position().x, movingPlatforms[i].getBoundsRectangleShape(movingPlatformShape).top - character.getBoundsPentagonShape(characterShape).height - 1.f));
+    		// Adjust the character's position to be just above the moving platform
+    		character.set_characterPosition(character.get_characterPosition().x, movingPlatforms[i].getBounds().top - character.get_characterBorder().height - 1.f);
+    		// Update the characterPlatformVelocity to match the platform's velocity
     		character.set_characterPlatformVelocity(0.f, 0.f);
+			// std::cout<<"velocity:"<<mpVelocity << std::endl;
+			std::cout<<movingPlatforms[i].getPlatformVelocity().x * timeline.getDeltaTime()<<std::endl;
 		}
 		}
+			
+
 		//movement
 		if (window.hasFocus()) {
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
@@ -570,65 +729,81 @@ public:
     		character.set_isJumping(true); // Set jumping flag to true	
 		}
 		}
+		
 		//Thread 2 logic
 		for(int i = 0; i < movingPlatforms.size(); i++){
 			std::thread t2(&MovingPlatform::platformMove, &movingPlatforms[i], WINDOW_WIDTH);
     		t2.detach();
 		}
+
 		if(character.get_moveX())
 		{
-			character.set_position_pentagon(characterShape,Vector2f(character.get_position().x + character.get_characterVelocity().x + character.get_characterPlatformVelocity().x, character.get_position().y));
+			character.set_characterPosition(character.get_characterPosition().x + character.get_characterVelocity().x + character.get_characterPlatformVelocity().x, character.get_characterPosition().y);
 		}
 		if(character.get_moveY())
 		{
-			character.set_position_pentagon(characterShape,Vector2f(character.get_position().x, character.get_position().y + character.get_characterVelocity().y));
+			character.set_characterPosition(character.get_characterPosition().x, character.get_characterPosition().y + character.get_characterVelocity().y);
 		}
-		if(character.get_position().x<0)
+
+		if(character.get_characterPosition().x<0)
 		{
-			character.set_position_pentagon(characterShape,Vector2f(0.f, character.get_position().y));
-		}	
-		if(lava.isCharacterColliding(character.getBoundsPentagonShape(characterShape)))
+			character.set_characterPosition(0.f, character.get_characterPosition().y);
+		}
+		if(lava.isCharacterColliding(character.get_characterBorder()))
 		{
 			character.character_respawn();
 			gameView.setCenter(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
         	window.setView(gameView);
 			lava.lava_respawn();
 		}
-		if (character.get_position().x < WINDOW_WIDTH/2) {
-                sf::Vector2f currentCenter = gameView.getCenter();
-				if(currentCenter.x!=WINDOW_WIDTH / 2){
-				while(currentCenter.x==WINDOW_WIDTH / 2)
-				{
-                gameView.setCenter(currentCenter.x - (WINDOW_WIDTH/2)-character.get_position().x, currentCenter.y);
-				sf::RectangleShape *lavaShape = lava.getLava();
-				lava.set_position_rectangle(lavaShape,Vector2f(lava.get_position().x - 1000.f-character.get_position().x, lava.get_position().y ));
-				}
-			}
-                window.setView(gameView);
-            } 
-			else if (character.get_position().x >= WINDOW_WIDTH/2) {
-				sf::Vector2f currentCenter = gameView.getCenter();
-				gameView.setCenter(character.get_position().x, currentCenter.y);
-				sf::RectangleShape *lavaShape = lava.getLava();
-				lava.set_position_rectangle(lavaShape,Vector2f(character.get_position().x - (WINDOW_WIDTH/2), lava.get_position().y ));
-                window.setView(gameView);
-        }
+		
+
+		// if (character.get_characterPosition().x < WINDOW_WIDTH/2) {
+        //         // Character hit the left side boundary
+        //         // Move all objects in the scene to the right to create the side-scrolling effect
+        //         sf::Vector2f currentCenter = gameView.getCenter();
+		// 		if(currentCenter.x!=WINDOW_WIDTH / 2){
+		// 		while(currentCenter.x==WINDOW_WIDTH / 2)
+		// 		{
+        //         gameView.setCenter(currentCenter.x - (WINDOW_WIDTH/2)-character.get_characterPosition().x, currentCenter.y);
+		// 		lava.set_position(Vector2f(lava.get_position().x - 1000.f-character.get_characterPosition().x, lava.get_position().y ));
+		// 		}
+		// 	}
+        //         window.setView(gameView);
+        //     } 
+		// 	else if (character.get_characterPosition().x >= WINDOW_WIDTH/2) {
+        //         // Character hit the right side boundary
+        //         // Move all objects in the scene to the left to create the side-scrolling effect
+		// 		sf::Vector2f currentCenter = gameView.getCenter();
+		// 		gameView.setCenter(character.get_characterPosition().x, currentCenter.y);
+		// 		// window.setView(gameView);
+        //         // sf::Vector2f currentCenter = gameView.getCenter();
+        //         // gameView.setCenter((WINDOW_WIDTH / 2) + character.get_characterPosition().x-1000.f, currentCenter.y);
+		// 		lava.set_position(Vector2f(character.get_characterPosition().x - (WINDOW_WIDTH/2), lava.get_position().y ));
+        //         window.setView(gameView);
+        // }
+		sf::Vector2f characterPosition = character.get_characterPosition();
+    	if (boundary.characterHitsBoundary(characterPosition)) {
+        	boundary.adjustViewForBoundary(gameView, characterPosition, WINDOW_WIDTH, lava);
+    	}
+		window.setView(gameView);
 		window.clear();
 		for (int i = 0; i < platforms.size(); i++) {
-            window.draw(*platforms[i].getPlatform());
+            window.draw(platforms[i].getPlatform());
         }
-		window.draw(*lava.getLava());
+		
+		window.draw(lava.getLava());
 		//network code
-		characterState.characterX = character.get_position().x;
-		characterState.characterY = character.get_position().y;
-		networkManager.sendGameData(characterState.characterX, characterState.characterY, timeline.getGameTime(realTimeClock));
+		characterState.characterX = character.get_characterPosition().x;
+		characterState.characterY = character.get_characterPosition().y;
+		networkManager.sendGameData(characterState.characterX, characterState.characterY);
 	
 		std::map<int, sf::Vector2f> characterPositions;
 		characterPositions = networkManager.receiveGameData(std::ref(platforms),std::ref(movingPlatforms));
-
+	
 		for(int i = 0; i < movingPlatforms.size(); i++)
 		{
-			window.draw(*movingPlatforms[i].getMovingPlatform());
+			window.draw(movingPlatforms[i].getMovingPlatform());
 		}
 		int count = 0;
 		for (auto i : characterPositions) 
@@ -638,8 +813,18 @@ public:
 				c[count].setFillColor(sf::Color(255,0,0));
 				window.draw(c[count]);
 				count++;
+
         }
 		window.display();
+		// end_time = std::chrono::high_resolution_clock::now();
+
+    // Calculate the duration
+    // std::chrono::duration<double> duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+    
+    // Print the execution time in seconds
+    // std::cout << "Execution time: " << duration.count() << " seconds" << std::endl;
+		// gameState.characterPositions.clear();
+		
 	}
     }
 protected:
@@ -651,20 +836,26 @@ protected:
     Timeline timeline;
 	Lava lava;
 	Spawner characterSpawner;
-	Character character;
 	int clientID;
     float gravity;
     unsigned WINDOW_WIDTH;
     unsigned WINDOW_HEIGHT;
+	// unsigned WORLD_WIDTH;
     sf::RenderWindow window;
+	// float mpVelocity;
 	const float SIDE_SCROLL_SPEED = 100.0f; // Adjust the scroll speed as needed
     const float CHARACTER_BOUNDARY_X = 0.0f;
 };
 
+
 int main()
 {
+	
 	Game game;
 	game.run();
+
+	
+
 	return 0;
 }
 
