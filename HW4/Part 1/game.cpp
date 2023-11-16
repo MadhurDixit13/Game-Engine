@@ -291,7 +291,7 @@ public:
 		return velocity;
 	}
 	void set_characterVelocityX(float x){
-		// std::cout<<x<<std::endl;
+		std::cout<<x<<std::endl;
 		// std::cout<<"Hi"<<std::endl;
 		velocity.x = x;
 	}
@@ -349,14 +349,9 @@ public:
         sub_socket = zmq::socket_t(context, ZMQ_SUB);
         int conflate = 1;
         sub_socket.setsockopt(ZMQ_CONFLATE, &conflate, sizeof(conflate));
-		event_socket = zmq::socket_t(context, ZMQ_REQ);
-		event_socket.connect("tcp://localhost:5557");
         sub_socket.connect("tcp://localhost:5555");
         sub_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
     }
-	int getClientId(){
-		return clientID;
-	}
 	void sendMessage(std::string reply){
 		req_socket.send(zmq::const_buffer(reply.c_str(), reply.size()), zmq::send_flags::none);
 	}
@@ -376,26 +371,6 @@ public:
 		zmq::message_t response;
         req_socket.recv(response, zmq::recv_flags::none);
     }
-	//NEW CODE TO SEND EVENT DATA FROM CLIENT TO SERVER
-	void sendEvents(int id, std::string name, Timeline *time){
-		if(name=="ChangeGameSpeed"){
-		std::string serializedData = std::to_string(id) + "," + name;
-		// std::cout<<serializedData<<std::endl;
-		event_socket.send(zmq::const_buffer(serializedData.c_str(), serializedData.size()), zmq::send_flags::none);
-		zmq::message_t response;
-		event_socket.recv(response, zmq::recv_flags::none);
-		std::string responseStr(static_cast<char*>(response.data()), response.size());
-		// std::cout<<responseStr<<std::endl;
-		time->setGameSpeed(std::stof(responseStr));
-		}
-		else{
-			std::string serializedData = "Empty";
-		event_socket.send(zmq::const_buffer(serializedData.c_str(), serializedData.size()), zmq::send_flags::none);
-		zmq::message_t response;
-		event_socket.recv(response, zmq::recv_flags::none);
-		}
-	}
-	//TILL HERE
     std::map<int, sf::Vector2f> receiveGameData(std::vector<Platform>& platforms,std::vector<MovingPlatform>& movingPlatforms) {
         zmq::message_t message;
         sub_socket.recv(message, zmq::recv_flags::none);
@@ -435,12 +410,9 @@ public:
     }
 private:
     int clientID;
-	// Timeline time;
     zmq::context_t context;
     zmq::socket_t req_socket;
     zmq::socket_t sub_socket;	
-	//NEW SOCKET
-	zmq::socket_t event_socket;
 };
 
 struct CharacterState {
@@ -463,9 +435,7 @@ public:
             CharacterCollision,
             CharacterDeath,
             CharacterSpawn,
-            UserInput,
-			ChangeGameSpeed,
-			Replay
+            UserInput
             // Add more event types as needed
         } type;
 		Character *character;
@@ -474,16 +444,10 @@ public:
 		MovingPlatform *movingPlatform;
 		Lava *lava;
 		Vector2f window_size;
-		std::vector<MovingPlatform> *movingPlatforms;
-		std::map<int, sf::Vector2f> *characterPositions;
-		std::vector<Platform> *platforms;
 		sf::RenderWindow *window;
         float timestamp;  // To store the time when the event occurred.
 		std::string userInputType;
-		std::string name;
 		sf::View *gameView;
-		int clientId;
-		bool replay;
 		bool operator<(const GameEvent& other) const {
             return timestamp > other.timestamp;  // Use > to make the priority queue behave like a min-heap.
         }
@@ -511,10 +475,12 @@ public:
     		// Collision detected with the platform
     		event.character->set_characterVelocityY(0.f); // Stop falling due to gravity
     		event.character->set_isJumping(false);
+    		// Adjust the character's position to be just above the platform
     		event.character->set_position_pentagon(characterShape,Vector2f(event.character->get_position_pentagon(characterShape).x, event.platform->getBoundsRectangleShape(platformShape).top - event.character->getBoundsPentagonShape(characterShape).height - 1.f));
 			}
 		}
 		else if(userInputType == "lava"){
+			// GameEvent event = event
 			characterDeathEvent(event);
 		}
 	}
@@ -527,25 +493,43 @@ public:
 	void handleCharacterRespawn(const GameEvent& event){
 			event.character->character_respawn();
 	}
-	void handleReplay(GameEvent& event){
-			
-	}
-	void handleUserInputs(GameEvent& event){
+	void handleUserInputs(const GameEvent& event){
     	std::string userInputType = event.userInputType;
+    
     	if (userInputType == "A") {
+        	// Handle character moving left
+        	// Access the character object and update its state.
+			std::cout<<timeline.getDeltaTime()<<std::endl;
 			event.character->set_characterVelocityX(-event.character->get_movementSpeed()*event.time->getDeltaTime());
 			event.character->set_moveX(true);
     	} else if (userInputType == "D") {
+        	// Handle character moving right
+        	// Access the character object and update its state.
+			// std::cout<<"D"<<std::endl;
+			// std::cout<<event.character->get_movementSpeed();
 			event.character->set_characterVelocityX(event.character->get_movementSpeed()*event.time->getDeltaTime());
     	    event.character->set_moveX(true);
     	} else if (userInputType == "Space") {
+        	// Handle character jumping
+        	// Access the character object and update its state.
+			// std::cout<<"Space"<<std::endl;
     		event.character->set_characterVelocityY(event.character->get_characterVelocity().y - (event.character->get_jumpSpeed() * event.time->getDeltaJumpTime()));  // Apply upward velocity for jumping
     		event.character->set_isJumping(true); // Set jumping flag to true	
     	} else if (userInputType == 'Q'){
-				event.type = GameEvent::Type::ChangeGameSpeed;
-				event.name = "ChangeGameSpeed";
-				NetworkManager network(event.clientId);
-				network.sendEvents(event.clientId, event.name, event.time);
+			// std::cout<<"Q"<<std::endl;
+    			if(event.time->getGameSpeed() == 1.f)
+    			{
+    				// std::cout<<"gameSpeed"<<timeline.getGameSpeed()<<std::endl;
+    				event.time->setGameSpeed(1.5f);
+    			}
+    			else if(timeline.getGameSpeed()  == 1.5f)
+    			{
+    				event.time->setGameSpeed(0.5f);
+    			}
+    			else if(timeline.getGameSpeed()  == 0.5f)
+    			{
+    				event.time->setGameSpeed(1.f);
+    			}
     	}
 	}
     void characterCollisionPlatformEvent(Character *object, Platform *platform, std::string input) {
@@ -557,7 +541,7 @@ public:
 		event.userInputType = input;
         eventQueue.push(event);
     }
-	void characterCollisionLavaEvent(Character *object, Lava *lava, sf::RenderWindow *window, sf::View *gameView, unsigned window_width, unsigned window_height,std::string input) {
+	void characterCollisionLavaEvent(Character *object, Lava *lava, sf::RenderWindow *window, sf::View *gameView, unsigned window_width, unsigned window_height,std::string input){
 		GameEvent event;
         event.type = GameEvent::Type::CharacterCollision;
         event.timestamp = timeline.getGameTime();
@@ -588,34 +572,16 @@ public:
         event.type = GameEvent::Type::CharacterSpawn;
         eventQueue.push(event);
     }
-	// void changeGameSpeed(int clientId, Timeline *time){
-	// 	GameEvent event;
-	// }
-	void replayEvent(Character *object, bool rep, std::vector<MovingPlatform> *movingPlatform, std::vector<Platform> *platform, std::map<int, sf::Vector2f> *characterPositions){
-		GameEvent event;
-        event.type = GameEvent::Type::Replay;
-        event.timestamp = timeline.getGameTime();
-		event.character = object;
-		event.movingPlatforms = movingPlatform;
-		event.platforms = platform;
-		event.characterPositions = characterPositions;
-		event.replay = rep;
-		replay = rep;
-        eventQueue.push(event);
-	}
-    void userInputEvent(std::string input, Character *object, Timeline* time, int clientId) {
-		std::cout<<"clientId:"<<clientId<<std::endl;
+    void userInputEvent(std::string input, Character *object, Timeline* time) {
         GameEvent event;
         event.type = GameEvent::Type::UserInput;
         event.timestamp = timeline.getGameTime();
 		event.time = time;
 		event.userInputType = input;
-		event.clientId = clientId;
 		event.character = object;
         eventQueue.push(event);
     }
 	void handleEvents() {
-		GameEvent replay_event;
     while (!eventQueue.empty()) {
         GameEvent event = eventQueue.top();
         if (timeline.getGameTime() >= event.timestamp) {
@@ -628,23 +594,6 @@ public:
             } else if (event.type == GameEvent::Type::UserInput) {
                 handleUserInputs(event);
             }
-			else if(event.type == GameEvent::Type::Replay){
-				replay_event = event;
-			}
-			if(replay == true){
-				
-				platforms.push_back(Platform(sf::Color(165,42,42), sf::Color(0,255,0), sf::Vector2f(10.f,600.f),sf::Vector2f(400.f, 100.f)));
-				platforms.push_back(Platform(sf::Color(165,42,42), sf::Color(0,0,255), sf::Vector2f(1800.f,500.f), sf::Vector2f(200.f, 100.f)));
-				movingPlatforms.push_back(MovingPlatform(sf::Color(165,42,42), sf::Color(255,0,0),sf::Vector2f(500.f, 100.f), Vector2f(480.f, 500.f), Vector2f(480.f, 500.f), Vector2f(150.f, 0.f)));
-				movingPlatforms.push_back(MovingPlatform(sf::Color(165,42,42), sf::Color(200,255,0),sf::Vector2f(500.f, 100.f), Vector2f(2150.f, 200.f), Vector2f(2150.f, 200.f), Vector2f(0.f, 150.f)));
-				// movingplatform1_positions.push_back(replay_event.movingPlatforms[0].get_position_rectangle(replay_event.movingPlatforms[0]));
-				replayVector.push_back(event);
-			}
-			else if(replay == false){
-				if (event.type == GameEvent::Type::Replay){
-					handleReplay(event);
-				}
-			}
             eventQueue.pop();
         } else {
             break;
@@ -653,15 +602,7 @@ public:
 	}
 
 protected:
-	bool replay;
     std::priority_queue<GameEvent> eventQueue; 
-	std::vector<Platform> platforms;
-	// std::vector<Vector2f> platform_positions;
-	std::vector<Vector2f> movingplatform1_positions;
-	std::vector<Vector2f> movingplatform2_positions;
-	PentagonShape c[30];
-	std::vector<MovingPlatform> movingPlatforms;
-	std::vector<GameEvent> replayVector;
     Timeline timeline;
 };
 
@@ -684,28 +625,17 @@ void thread1(sf::Texture& texture, std::vector<Platform>& platforms, std::vector
 
 class Game{
 public:
-    Game() : window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Platforms"), gravity(20.f), clientID(1), eventManager(),WINDOW_WIDTH(1600), WINDOW_HEIGHT(1600), networkManager(clientID), lava(1800.f, 1600.f, 20.0f), characterSpawner(50.f, 545.f){
+    Game() : window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Platforms"), gravity(20.f), clientID(0), eventManager(),WINDOW_WIDTH(1600), WINDOW_HEIGHT(1600), networkManager(clientID), lava(1800.f, 1600.f, 20.0f), characterSpawner(50.f, 545.f){
         window.setVerticalSyncEnabled(true);
 	}	
 	void run() {
-		int replay_count = 0;
-		bool event_message;
-		bool replay = false;
-		bool replayStopped = false;
-		std::map<int, std::vector<Vector2f>> characterPositionsReplay;
 		PentagonShape *characterShape = character.getCharacter();
 		RectangleShape *lavaShape = lava.getLava();
 		std::string reply = "Joined";
-		clientID = networkManager.getClientId();
+
 		timeline.start_realtime();
 	    networkManager.sendMessage(reply);
 	    networkManager.receiveMessage();
-		std::vector<MovingPlatform> movingPlatformsReplay;
-		std::vector<Platform> platformsReplay;
-		platformsReplay.push_back(Platform(sf::Color(165,42,42), sf::Color(0,255,0), sf::Vector2f(10.f,600.f),sf::Vector2f(400.f, 100.f)));
-		platformsReplay.push_back(Platform(sf::Color(165,42,42), sf::Color(0,0,255), sf::Vector2f(1800.f,500.f), sf::Vector2f(200.f, 100.f)));
-		movingPlatformsReplay.push_back(MovingPlatform(sf::Color(165,42,42), sf::Color(255,0,0),sf::Vector2f(500.f, 100.f), Vector2f(480.f, 500.f), Vector2f(480.f, 500.f), Vector2f(150.f, 0.f)));
-		movingPlatformsReplay.push_back(MovingPlatform(sf::Color(165,42,42), sf::Color(200,255,0),sf::Vector2f(500.f, 100.f), Vector2f(2150.f, 200.f), Vector2f(2150.f, 200.f), Vector2f(0.f, 150.f)));
 		std::vector<Platform> platforms;
 		platforms.push_back(Platform(sf::Color(165,42,42), sf::Color(0,255,0), sf::Vector2f(10.f,600.f),sf::Vector2f(400.f, 100.f)));
 		platforms.push_back(Platform(sf::Color(165,42,42), sf::Color(0,0,255), sf::Vector2f(1800.f,500.f), sf::Vector2f(200.f, 100.f)));
@@ -731,20 +661,14 @@ public:
 		
 		std::thread t1(&thread1, std::ref(texture), std::ref(platforms), std::ref(movingPlatforms), platforms.size(), movingPlatforms.size());
 		t1.join();
-		std::thread t2(&thread1, std::ref(texture), std::ref(platformsReplay), std::ref(movingPlatformsReplay), platformsReplay.size(), movingPlatformsReplay.size());
-		t2.join();
 
     	static bool pKeyPressed = false; 
     	static bool qKeyPressed = false;
-		static bool rKeyPressed = false;
         // Initialize the network manager here
 		while(window.isOpen())
 		{
-		std::map<int, sf::Vector2f> characterPositions;
-		
 		sf::Event event;
 		character.set_moveX(false);
-		event_message = false;
 		if (window.hasFocus()) {
 		while(window.pollEvent(event))
 		{
@@ -767,29 +691,10 @@ public:
     		{
         		pKeyPressed = false; // Reset the flag when 'P' key is released
     		}
-			else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::R && !rKeyPressed)
-			{
-				rKeyPressed = true;
-				if(replay == false){
-					replay=true;
-					
-				}
-				else{
-
-					replayStopped = true;
-					replay=false;
-				}
-				// eventManager.replayEvent(&character, replay, &movingPlatforms, &platforms, &characterPositions);
-			}
-			else if(event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::R){
-				rKeyPressed = false;
-			}
 		}
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
 		{
-			eventManager.userInputEvent("Q", &character,&timeline, clientID+1);
-			event_message = true;
-
+			eventManager.userInputEvent("Q", &character,&timeline);
 		}
 		}
 		if (!timeline.isPaused()) 
@@ -818,15 +723,15 @@ public:
 		if (window.hasFocus()) {
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 		{
-			eventManager.userInputEvent("A", &character, &timeline, clientID);
+			eventManager.userInputEvent("A", &character, &timeline);
 		}	
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
 		{
-			eventManager.userInputEvent("D", &character, &timeline, clientID);
+			eventManager.userInputEvent("D", &character, &timeline);
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && !character.get_isJumping())
 		{	
-			eventManager.userInputEvent("Space", &character, &timeline, clientID);
+			eventManager.userInputEvent("Space", &character, &timeline);
 		}
 		}
 		eventManager.handleEvents();
@@ -837,7 +742,7 @@ public:
 		}
 		if(character.get_moveX())
 		{
-			// std::cout<<"Velocity:"<<character.get_characterVelocity().x <<std::endl;
+			std::cout<<"Velocity:"<<character.get_characterVelocity().x <<std::endl;
 			character.set_position_pentagon(characterShape,Vector2f(character.get_position_pentagon(characterShape).x + character.get_characterVelocity().x + character.get_characterPlatformVelocity().x, character.get_position_pentagon(characterShape).y));
 		}
 		if(character.get_moveY())
@@ -872,86 +777,18 @@ public:
                 window.setView(gameView);
         }
 		window.clear();
-		
-		if (event_message == false){
-			networkManager.sendEvents(clientID, "Empty", &timeline);
-		}
-		
+		for (int i = 0; i < platforms.size(); i++) {
+            window.draw(*platforms[i].getPlatform());
+        }
+		window.draw(*lava.getLava());
 		//network code
 		characterState.characterX = character.get_position_pentagon(characterShape).x;
 		characterState.characterY = character.get_position_pentagon(characterShape).y;
 		networkManager.sendGameData(characterState.characterX, characterState.characterY, timeline.getGameTime());
 	
-		
+		std::map<int, sf::Vector2f> characterPositions;
 		characterPositions = networkManager.receiveGameData(std::ref(platforms),std::ref(movingPlatforms));
-		window.draw(*lava.getLava());
-		if(replay == true){
-		
-			movingPlatform1_position.push_back(movingPlatforms[0].get_position_rectangle(movingPlatforms[0].getMovingPlatform()));
-			movingPlatform2_position.push_back(movingPlatforms[1].get_position_rectangle(movingPlatforms[1].getMovingPlatform()));
-			// std::cout<<movingPlatform2_position[movingPlatform2_position.size()-1].y<<std::endl;
-			int count = 0;
-			for (auto i : characterPositions) {
-					// std::cout<<"Bye"<<std::endl;
-				// std::cout<<i.second.x<<","<<i.second.y<<std::endl;
-				characterPositionsReplay[count].push_back(sf::Vector2f(i.second.x, i.second.y));
-				std::cout<<characterPositionsReplay[count].back().x<<std::endl;
-				count++;
-			}
-		}
-		else if(replay == false && replayStopped == true){
-        // Set up the game view for replay
-				// std::cout<<"Hi"<<std::endl;
-			// std::cout<<"moving platform:"<<movingPlatformsReplay[0].get_position_rectangle(movingPlatformsReplay[0].getMovingPlatform()).x<<std::endl;
-			// std::cout<<"platform:"<<platformsReplay[0].get_position_rectangle(platformsReplay[0].getPlatform()).x<<std::endl;
-			// std::cout<<"characte"
-			movingPlatformsReplay[0].set_position_rectangle(movingPlatformsReplay[0].getMovingPlatform(), movingPlatform1_position[0]);
-			movingPlatform1_position.erase(movingPlatform1_position.begin());
-			movingPlatformsReplay[1].set_position_rectangle(movingPlatformsReplay[1].getMovingPlatform(), movingPlatform2_position[0]);
-			movingPlatform2_position.erase(movingPlatform2_position.begin());
-			window.draw(*movingPlatformsReplay[0].getMovingPlatform());
-			window.draw(*movingPlatformsReplay[1].getMovingPlatform());
-			window.draw(*platformsReplay[0].getPlatform());
-			window.draw(*platformsReplay[0].getPlatform());
-				
-			int count = 0;
-			for (auto i : characterPositions) 
-        	{
-				// std::cout<<"Move"<<std::endl;
-				PentagonShape c[30];
-				std::cout<<characterPositionsReplay[count][0].x<<std::endl;
-				c[count].setPosition(characterPositionsReplay[count][0]);
-				c[count].setFillColor(sf::Color(255,0,0));
-				window.draw(c[count]);
-				count++;
-        	}
-			for(int i =0 ;i<characterPositions.size();i++){
-				PentagonShape ch[30];
-				// std::cout<<characterPositionsReplay[i][0].x<<std::endl;
-				ch[i].setPosition(characterPositionsReplay[i][0]);
-				characterPositionsReplay[i].erase(characterPositionsReplay[i].begin());
-				std::cout<<characterPositionsReplay[i][0].x<<std::endl;
-				ch[i].setFillColor(sf::Color(255,0,0));
-				std::cout<<"Moved"<<std::endl;
-				window.draw(ch[i]);
-			}
-			// replayWindow.display();
-			replay_count++;
-        	if(movingPlatform1_position.empty()){
-				replayStopped=false;
-				movingPlatform1_position.clear();
-				movingPlatform2_position.clear();
-				// platformsReplay.clear();
-				// movingPlatformsReplay.clear();
-				characterPositionsReplay.clear();
-				replay_count=0;
-			}
-			
-		}
-		if (replayStopped == false){
-		for (int i = 0; i < platforms.size(); i++) {
-            window.draw(*platforms[i].getPlatform());
-        }
+
 		for(int i = 0; i < movingPlatforms.size(); i++)
 		{
 			window.draw(*movingPlatforms[i].getMovingPlatform());
@@ -966,7 +803,6 @@ public:
 				window.draw(c[count]);
 				count++;
         }
-		}
 		window.display();
 	}
     }
@@ -988,9 +824,6 @@ protected:
     sf::RenderWindow window;
 	const float SIDE_SCROLL_SPEED = 100.0f; // Adjust the scroll speed as needed
     const float CHARACTER_BOUNDARY_X = 0.0f;
-	std::vector<Vector2f> movingPlatform1_position;
-	std::vector<Vector2f> movingPlatform2_position;
-
 };
 
 int main()

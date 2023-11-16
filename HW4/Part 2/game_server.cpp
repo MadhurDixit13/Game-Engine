@@ -400,7 +400,7 @@ public:
         zmq::message_t response;
         event_socket.recv(response, zmq::recv_flags::none);
         std::string responseStr(static_cast<char*>(response.data()), response.size());
-        std::cout<<responseStr<<std::endl;
+        // std::cout<<responseStr<<std::endl;
         if(responseStr == "Empty"){
             std::string reply = "Ok";
             event_socket.send(zmq::const_buffer(reply.c_str(), reply.size()), zmq::send_flags::none);   
@@ -418,7 +418,6 @@ public:
 
         EventManager event;
         event.changeGameSpeed(clientId, name, gameState);
-        std::cout<<"clientid:"<<clientId<<std::endl;
         std::cout<<gameState->gameSpeed[clientId]<<std::endl;
         event.handleEvents();
         std::cout<<gameState->gameSpeed[clientId]<<std::endl;
