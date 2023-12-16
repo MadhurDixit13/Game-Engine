@@ -1,51 +1,51 @@
-# Game-Engine
-Homework for the course Game-Engine-Foundations (CSC581).
+# Platformer Game Engine
 
-## Name
-Platforms (Since it's basically our character jumping on platforms :p)
-
-## Description
-Homework for the course Game-engine Foundations. It's currently a game with elements of a game engine such as movement, basic physics, inheritance and reusing, asynchronity and networking(multiplayer)
+## Project Overview
+This project, developed for the Game-Engine-Foundations course (CSC581), is a platformer game engine with incorporated features such as movement, basic physics, inheritance, reusing, asynchronity, networking (multiplayer), scripting, and event management. The game engine showcases its capabilities through two implemented games, namely Flappy Bird and Space Invaders.
 
 ## Controls
-A-move left <br>
-D-move right <br>
-space-jump <br>
-E + resize button on titlebar = constant scaling <br>
-Q - Change speed (0.5, 1, 2) <br>
-P - Pause Unpause <br>
-R - Record and Play Replay. the first time you press R it starts recording and when you press it again it stops recording and plays the recording.<br>
+- **A:** Move Left
+- **D:** Move Right
+- **Space:** Jump
+- **E + Resize Button on Title Bar:** Constant Scaling
+- **Q:** Change Speed (0.5x, 1x, 2x)
+- **P:** Pause/Unpause
+- **R:** Record and Play Replay. Pressing 'R' starts recording, and pressing it again stops recording and plays the recording.
+- **A & D (Chord):** Death Script
 
-## How to run
-First, download the zip and extract it, then go to the folder and open terminal <br>
-After installing the dependencies and required libraries <br>
-Enter the following commands: <br><br>
-To start the server:<br>
-1) g++ -c game_server.cpp - <br>
-2) g++ game_server.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
-3) ./(name of the output file) <br><br>
-
-To start the client:<br>
-1) g++ -c game.cpp - <br>
-2) g++ game.o -o (name of the output file) -lsfml-graphics -lsfml-system -lsfml-window <br>
-3) ./(name of the output file) <br>
+## How to Run
+1. Download the zip and extract it.
+2. Open a terminal and navigate to the extracted folder.
+3. Install the required dependencies and libraries.
+4. To start the server:
+    ```bash
+    cd server
+    g++ -c game_server.cpp -
+    g++ game_server.o -o <output_file_name> -lsfml-graphics -lsfml-system -lsfml-window -lzmq
+    ./<output_file_name>
+    ```
+5. To start the client:
+    ```bash
+    make
+    ./main
+    ```
 
 ## System Specifications
-Operating System:
-Ubuntu 20.04 (tested)
-
-Should work on windows, mac and other versions of linux (Haven't tested)
+- **Operating System:**
+  - Ubuntu 20.04 (tested)
+  - Should work on Windows, macOS, and other versions of Linux (not tested)
 
 ## Dependencies
-1. x11-apps <br>
-2. build-essential <br>
-3. libsfml-dev <br>
-4. zmq <br>
+1. x11-apps
+2. build-essential
+3. libsfml-dev
+4. zmq
+5. v8
 
-## Authors and Acknowledgement
-Madhur Dixit
+## Author and Acknowledgement
+**Author:** Madhur Dixit
 
-## Project status
-Ongoing
+## Project Status
+Completed
 
 
