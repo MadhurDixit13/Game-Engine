@@ -35,6 +35,18 @@ This project, developed for the Game-Engine-Foundations course (CSC581), is a pl
   - Ubuntu 20.04 (tested)
   - Should work on Windows, macOS, and other versions of Linux (not tested)
 
+## Images
+![Game Engine](assets/1.png)
+![Game Engine](assets/2.png)
+![Space Invaders](assets/3.png)
+![Space Invaders](assets/4.png)
+![Flappy Bird](assets/5.png)
+
+-**Game Engine**
+[![Game Engine](assets/1.png)](assets/6.mp4)
+[![Space Invaders](assets/3.png)](assets/7.mp4)
+[![Flappy Bird](assets/5.png)](assets/8.mp4)
+
 ## Dependencies
 1. x11-apps
 2. build-essential
